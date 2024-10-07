@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -96,4 +96,12 @@ public interface TreeNode extends Node {
        @return true, if the item exists
     */
     public boolean exists(CallContext context);
+
+    /**
+       Checks, whether the item denoted by this node is a symbolic link,
+       and if so, returns the link target.
+
+       @return link target, if item is symbolic link, otherwise null
+    */
+    public String optionallyGetLinkTarget(CallContext context);
 }

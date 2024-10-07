@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.classes;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -155,5 +155,13 @@ public class TreeNode_Union extends TreeNode_BaseImpl {
             if (node.exists(context)) { return true; }
         }
         return false;
+    }
+
+    public String optionallyGetLinkTarget(CallContext context) {
+        for (TreeNode node : nodes) {
+            String target = node.optionallyGetLinkTarget(context);
+            if (target != null) { return target; }
+        }
+        return null;
     }
 }

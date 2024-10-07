@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.io;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -43,7 +43,10 @@ public class TreeNode_MediaObject implements TreeNode {
     }
 
     public String getId(CallContext context) {
-        return this.data__media_object.getDispositionFilename(context);
+        Locator locator = this.data__media_object.tryGetOrigin(context);
+        String id = (locator != null ? locator.getTextLocator(context)
+                                     : this.data__media_object.getDispositionFilename(context));
+        return id;
     }
 
     public Location getLocation(CallContext context) {
@@ -89,5 +92,9 @@ public class TreeNode_MediaObject implements TreeNode {
 
     public boolean exists(CallContext context) {
         return true;
+    }
+
+    public String optionallyGetLinkTarget(CallContext context) {
+        return null;
     }
 }

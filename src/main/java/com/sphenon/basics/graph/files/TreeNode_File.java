@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.files;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -30,11 +30,19 @@ import com.sphenon.basics.graph.classes.*;
 import com.sphenon.basics.graph.files.factories.*;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.HashMap;
 
 public class TreeNode_File extends TreeNode_BaseImpl {
+    static final public Class _class = TreeNode_File.class;
+
+    static protected long notification_level;
+    static public    long adjustNotificationLevel(long new_level) { long old_level = notification_level; notification_level = new_level; return old_level; }
+    static public    long getNotificationLevel() { return notification_level; }
+    static { notification_level = NotificationLocationContext.getLevel(_class); };
 
     protected File     file;
+    protected String   id;
     protected TreeNode parent;
     protected Location location;
     
@@ -42,7 +50,8 @@ public class TreeNode_File extends TreeNode_BaseImpl {
 
     protected TreeNode_File (CallContext context, File file, TreeNode parent) {
         super(context);
-        this.file = file;
+        this.file   = file;
+        this.id     = null;
         this.parent = parent;
     }
 
@@ -51,7 +60,11 @@ public class TreeNode_File extends TreeNode_BaseImpl {
     }
 
     static public TreeNode_File create (CallContext context, File file, TreeNode parent, boolean allow_new) {
-        if (file.isDirectory() || (allow_new && file.exists() == false)) {
+        if (    file.getName().startsWith("##FOLDER##")
+             || file.isDirectory()
+             || (allow_new && file.exists() == false)
+             || Files.isSymbolicLink(file.toPath())
+           ) {
             return new TreeNode_File(context, file, parent);
         }
         CustomaryContext.create((Context)context).throwPreConditionViolation(context, "File '%(file)' argument to TreeNode_File is not a folder", "file", file);
@@ -59,7 +72,15 @@ public class TreeNode_File extends TreeNode_BaseImpl {
     }
 
     public String getId(CallContext context) {
-        return this.file.getName();
+        if (this.id == null) {
+            this.id = this.file.getName();
+            if (this.id.startsWith("##FILE##")) {
+                this.id = this.id.substring(8);
+            } else if (this.id.startsWith("##FOLDER##")) {
+                this.id = this.id.substring(10);
+            }
+        }
+        return this.id;
     }
 
     public Location getLocation(CallContext context) {
@@ -146,22 +167,26 @@ public class TreeNode_File extends TreeNode_BaseImpl {
                 this.childs_updated = this.file.lastModified();
                 File[] child_array = this.file.listFiles();
                 this.filter_results = null;
-                for (File child : child_array) {
-                    String child_name = child.getName();
-                    if (global_file_exclude.matches(context, child_name)) {
-                        continue;
-                    }
-                    TreeNode child_node = this.getChildMap(context).get(child_name);
-                    if (child_node == null) {
-                        try {
-                            child_node = Factory_TreeNode_File.construct(context, child, this);
-                        } catch (ValidationFailure vf) {
-                            CustomaryContext.create((Context)context).throwAssertionProvedFalse(context, vf, "Could not create child node (unexpectedly)");
-                            throw (ExceptionAssertionProvedFalse) null; // compiler insists
+                if (child_array == null) {
+                    if ((notification_level & Notifier.MONITORING) != 0) { NotificationContext.sendCaution(context, "Cannot access childs of '%(file)'", "file", this.file.getPath()); }
+                } else {
+                    for (File child : child_array) {
+                        String child_name = child.getName();
+                        if (global_file_exclude.matches(context, child_name)) {
+                            continue;
                         }
-                        this.getChildMap(context).put(child.getName(), child_node);
+                        TreeNode child_node = this.getChildMap(context).get(child_name);
+                        if (child_node == null) {
+                            try {
+                                child_node = Factory_TreeNode_File.construct(context, child, this);
+                            } catch (ValidationFailure vf) {
+                                CustomaryContext.create((Context)context).throwAssertionProvedFalse(context, vf, "Could not create child node (unexpectedly)");
+                                throw (ExceptionAssertionProvedFalse) null; // compiler insists
+                            }
+                            this.getChildMap(context).put(child.getName(), child_node);
+                        }
+                        this.childs.append(context, child_node);
                     }
-                    this.childs.append(context, child_node);
                 }
             }
         }
@@ -170,5 +195,17 @@ public class TreeNode_File extends TreeNode_BaseImpl {
 
     public boolean exists(CallContext context) {
         return this.file.exists();
+    }
+
+    public String optionallyGetLinkTarget(CallContext context) {
+        Path fp = this.file.toPath();
+        if (Files.isSymbolicLink(fp)) {
+            try {
+                return Files.readSymbolicLink(fp).toString();
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+        return null;
     }
 }

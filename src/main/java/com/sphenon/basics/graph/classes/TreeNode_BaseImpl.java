@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.classes;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -71,5 +71,9 @@ abstract public class TreeNode_BaseImpl implements TreeNode {
 
     public TreeNode getChildTree(CallContext context, NodeFilter filter) {
         return new TreeNode_Filter(context, this, filter, null);
+    }
+
+    public String optionallyGetLinkTarget(CallContext context) {
+        return null;
     }
 }

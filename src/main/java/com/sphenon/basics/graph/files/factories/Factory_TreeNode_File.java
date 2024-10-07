@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.files.factories;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -29,6 +29,7 @@ import com.sphenon.basics.graph.tplinst.*;
 import com.sphenon.basics.graph.files.*;
 
 import java.io.*;
+import java.nio.file.*;
 
 public class Factory_TreeNode_File implements Factory {
 
@@ -156,6 +157,27 @@ public class Factory_TreeNode_File implements Factory {
     }
 
     public TreeNode_File tryCreate (CallContext context) {
+        if (Files.isSymbolicLink(this.file.toPath())) {
+            File target_file = null;
+            try {
+                target_file = Files.readSymbolicLink(this.file.toPath()).toFile();
+            } catch (Throwable t) {
+            }
+            if (    (this.file.getName().startsWith("##FOLDER##") == true)
+                 || (target_file != null && target_file.isDirectory())
+                 || ((target_file == null || target_file.exists() == false) && node_type == NodeType.NODE)
+               ) {
+                return TreeNode_File.create(context, file, parent, this.allow_new);
+            }
+            if (    (this.file.getName().startsWith("##FILE##") == true)
+                 || (target_file != null && target_file.isFile())
+                 || ((target_file == null || target_file.exists() == false) && node_type == NodeType.LEAF)
+               ) {
+                return TreeLeaf_File.create(context, file, parent, this.allow_new);
+            }
+            CustomaryContext.create((Context)context).throwPreConditionViolation(context, "Target file '%(targetfile)' pointed to by symbolic link '%(file)' is neither a file nor a directory and symbolic link name is not explicitly marked with '##FILE##' or '##FOLDER##' or does not match expected node type '%(nodetype)'", "targetfile", target_file.getPath(), "file", this.file.getPath(), "nodetype", node_type);
+            throw (ExceptionPreConditionViolation) null; // compiler insists
+        }
         if (this.file.exists() == false && node_type == NodeType.ANY) {
             return null;
         }

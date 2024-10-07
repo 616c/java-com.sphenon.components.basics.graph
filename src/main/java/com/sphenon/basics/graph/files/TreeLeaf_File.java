@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.files;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -25,6 +25,7 @@ import com.sphenon.basics.graph.*;
 import com.sphenon.basics.graph.tplinst.*;
 
 import java.io.*;
+import java.nio.file.*;
 
 public class TreeLeaf_File extends TreeNode_File implements TreeLeaf {
 
@@ -37,7 +38,11 @@ public class TreeLeaf_File extends TreeNode_File implements TreeLeaf {
     }
 
     static public TreeLeaf_File create (CallContext context, File file, TreeNode parent, boolean allow_new) {
-        if (file.isFile() || (allow_new && file.exists() == false)) {
+        if (    file.getName().startsWith("##FILE##")
+             || file.isFile()
+             || (allow_new && file.exists() == false)
+             || Files.isSymbolicLink(file.toPath())
+           ) {
             return new TreeLeaf_File(context, file, parent);
         }
         CustomaryContext.create((Context)context).throwPreConditionViolation(context, "File '%(file)' argument to TreeLeaf_File exists, but is not a file", "file", file);

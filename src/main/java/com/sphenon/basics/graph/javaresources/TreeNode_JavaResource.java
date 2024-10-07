@@ -1,7 +1,7 @@
 package com.sphenon.basics.graph.javaresources;
 
 /****************************************************************************
-  Copyright 2001-2018 Sphenon GmbH
+  Copyright 2001-2024 Sphenon GmbH
 
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
@@ -310,5 +310,9 @@ public class TreeNode_JavaResource extends TreeNode_BaseImpl {
 
     public boolean exists(CallContext context) {
         return true;
+    }
+
+    public String optionallyGetLinkTarget(CallContext context) {
+        return null;
     }
 }
